@@ -7,3 +7,4 @@ poetry.lock
 *.db
 .DS_Store
 .vscode/
+AGENTS.md
