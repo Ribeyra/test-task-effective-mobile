@@ -63,7 +63,7 @@ Backend-приложение на FastAPI с собственной реализ
 |---|---|---|---|
 | POST | /api/v1/auth/register | public | Регистрация |
 | POST | /api/v1/auth/login | public | Вход → JWT |
-| POST | /api/v1/auth/logout | любой auth | Выход (заглушка) |
+| POST | /api/v1/auth/logout | любой auth | Выход (инвалидация токена) |
 | GET | /api/v1/users/me | любой auth | Профиль |
 | PATCH | /api/v1/users/me | любой auth | Обновление профиля |
 | DELETE | /api/v1/users/me | любой auth | Мягкое удаление |

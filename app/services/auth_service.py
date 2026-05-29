@@ -7,7 +7,7 @@ from app.core.security import (
     hash_token,
     verify_password
 )
-from app.models.models import User
+from app.models.models import Role, User, UserRole
 
 
 async def register_user(
@@ -32,6 +32,13 @@ async def register_user(
     db.add(user)
     await db.flush()
     await db.refresh(user)
+
+    result = await db.execute(select(Role).where(Role.name == "viewer"))
+    viewer_role = result.scalar_one_or_none()
+    if viewer_role:
+        db.add(UserRole(user_id=user.id, role_id=viewer_role.id))
+        await db.flush()
+
     return user
 
 
