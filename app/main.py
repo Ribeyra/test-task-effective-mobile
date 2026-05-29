@@ -4,7 +4,7 @@ from app.api.v1 import admin_users, auth, permissions, resources, roles, users
 
 app = FastAPI(
     title="Auth & Permission System",
-    description="Тестовое задание — система аутентификации и авторизации с RBAC/ACL",
+    description="Тестовое задание — система аутентификации и авторизации с RBAC/ACL",  # noqa e501
     version="0.1.0",
 )
 

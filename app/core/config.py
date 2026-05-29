@@ -8,7 +8,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/auth_system"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/auth_system"  # noqa e501
     SECRET_KEY: str = "change-me-to-a-random-secret-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 

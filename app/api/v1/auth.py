@@ -12,8 +12,9 @@ from app.schemas.schemas import (
 )
 from app.services.auth_service import (
     authenticate_user,
+    clear_user_token,
     generate_token,
-    register_user
+    register_user,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -58,9 +59,14 @@ async def login(body: UserLogin, db: AsyncSession = Depends(get_db)):
             detail="Invalid email or password",
         )
     token = generate_token(user)
+    await db.flush()
     return TokenOut(access_token=token)
 
 
 @router.post("/logout", response_model=MessageOut)
-async def logout(current_user: User = Depends(get_current_user)):
+async def logout(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await clear_user_token(db, current_user)
     return MessageOut(detail="Logged out successfully")

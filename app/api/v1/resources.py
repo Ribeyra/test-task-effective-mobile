@@ -1,9 +1,19 @@
-import uuid
+"""
+Mock-эндпоинты для демонстрации системы разграничения доступа.
+
+Роуты /resources/orders — явные, используют check_permission().
+Это эталонный вариант: ресурс известен на этапе импорта,
+Depends(check_permission(...)) работает прозрачно.
+
+Остальные роуты (/resources/{name}) — универсальные, с ручной проверкой
+прав внутри хендлера (_check_resource_access), чтобы не плодить код
+для каждого ресурса в рамках тестового задания.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import check_permission, get_current_user, get_db
 from app.models.models import User
 from app.services.permission_service import check_user_permission
 
@@ -40,6 +50,52 @@ async def _check_resource_access(
         )
 
 
+# ── orders — эталонные явные роуты с check_permission ──
+
+@router.get("/orders")
+async def list_orders(
+    _: User = Depends(check_permission("read", "orders")),
+):
+    return {
+        "resource": "orders", "action": "list", "data": MOCK_DATA["orders"]
+    }
+
+
+@router.post("/orders")
+async def create_orders(
+    _: User = Depends(check_permission("create", "orders")),
+):
+    return {"resource": "orders", "action": "create", "detail": "Mock created"}
+
+
+@router.patch("/orders/{item_id}")
+async def update_orders(
+    item_id: str,
+    _: User = Depends(check_permission("update", "orders")),
+):
+    return {
+        "resource": "orders",
+        "action": "update",
+        "id": item_id,
+        "detail": "Mock updated"
+    }
+
+
+@router.delete("/orders/{item_id}")
+async def delete_orders(
+    item_id: str,
+    _: User = Depends(check_permission("delete", "orders")),
+):
+    return {
+        "resource": "orders",
+        "action": "delete",
+        "id": item_id,
+        "detail": "Mock deleted"
+    }
+
+
+# ── универсальные роуты для остальных ресурсов ──
+
 @router.get("/{name}")
 async def list_resource(
     name: str,
@@ -69,7 +125,12 @@ async def update_resource(
     current_user: User = Depends(get_current_user),
 ):
     await _check_resource_access(db, current_user, "update", name)
-    return {"resource": name, "action": "update", "id": item_id, "detail": "Mock updated"}
+    return {
+        "resource": name,
+        "action": "update",
+        "id": item_id,
+        "detail": "Mock updated"
+    }
 
 
 @router.delete("/{name}/{item_id}")
@@ -80,4 +141,9 @@ async def delete_resource(
     current_user: User = Depends(get_current_user),
 ):
     await _check_resource_access(db, current_user, "delete", name)
-    return {"resource": name, "action": "delete", "id": item_id, "detail": "Mock deleted"}
+    return {
+        "resource": name,
+        "action": "delete",
+        "id": item_id,
+        "detail": "Mock deleted"
+    }

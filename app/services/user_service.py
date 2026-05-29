@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import User, UserRole, Role
+from app.models.models import User, UserRole
 
 
 async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
@@ -36,7 +36,9 @@ async def soft_delete_user(db: AsyncSession, user: User) -> None:
     await db.flush()
 
 
-async def assign_role_to_user(db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID) -> None:
+async def assign_role_to_user(
+    db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID
+) -> None:
     existing = await db.execute(
         select(UserRole).where(
             UserRole.user_id == user_id, UserRole.role_id == role_id
@@ -49,7 +51,9 @@ async def assign_role_to_user(db: AsyncSession, user_id: uuid.UUID, role_id: uui
     await db.flush()
 
 
-async def remove_role_from_user(db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID) -> bool:
+async def remove_role_from_user(
+    db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID
+) -> bool:
     result = await db.execute(
         select(UserRole).where(
             UserRole.user_id == user_id, UserRole.role_id == role_id

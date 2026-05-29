@@ -43,8 +43,12 @@ async def update_role_endpoint(
 ):
     role = await get_role_by_id(db, role_id)
     if not role:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-    return await update_role(db, role, name=body.name, description=body.description)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
+        )
+    return await update_role(
+        db, role, name=body.name, description=body.description
+    )
 
 
 @router.delete("/{role_id}", response_model=MessageOut)
@@ -55,7 +59,9 @@ async def delete_role_endpoint(
 ):
     role = await get_role_by_id(db, role_id)
     if not role:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
+        )
     if role.is_system:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -42,13 +42,20 @@ Backend-приложение на FastAPI с собственной реализ
 
 **Ресурсы:** orders, products, reports, users
 
-**Тестовый пользователь:** `admin@example.com` / `admin123` (is_superuser=True)
+**Тестовые пользователи:**
+
+| Пользователь | Пароль | Роль | Права |
+|---|---|---|---|
+| admin@example.com | admin123 | admin (is_superuser) | полный доступ ко всем ресурсам |
+| viewer@example.com | viewer123 | viewer | read на orders, products, reports |
 
 ### JWT
 
-Используется только access token (без refresh). Время жизни — 30 минут (настраивается через `ACCESS_TOKEN_EXPIRE_MINUTES` в `.env`).
-
-Серверная blacklist-инвалидация токенов не реализована (для тестового задания избыточно). При необходимости добавляется таблица `token_blacklist` с проверкой при каждом запросе.
+- Только access token (без refresh). Время жизни — 30 минут (настраивается через `ACCESS_TOKEN_EXPIRE_MINUTES` в `.env`).
+- При логине в `users.current_token_hash` сохраняется SHA-256 хэш выданного токена.
+- При каждом запросе `get_current_user` сравнивает хэш токена из заголовка с сохранённым. Несовпадение → 401.
+- При logout поле очищается, токен перестаёт работать.
+- При повторном логине старый хэш заменяется — активна только последняя сессия.
 
 ## API Endpoints
 
@@ -74,7 +81,11 @@ Backend-приложение на FastAPI с собственной реализ
 | POST | /api/v1/admin/permissions | admin | Создать разрешение |
 | PATCH | /api/v1/admin/permissions/{id} | admin | Изменить разрешение |
 | DELETE | /api/v1/admin/permissions/{id} | admin | Удалить разрешение |
-| GET | /api/v1/resources/{name} | зависит от прав | Mock: список |
+| GET | /api/v1/resources/orders | зависит от прав | Orders: список (явный роут) |
+| POST | /api/v1/resources/orders | зависит от прав | Orders: создать (явный роут) |
+| PATCH | /api/v1/resources/orders/{id} | зависит от прав | Orders: обновить (явный роут) |
+| DELETE | /api/v1/resources/orders/{id} | зависит от прав | Orders: удалить (явный роут) |
+| GET | /api/v1/resources/{name} | зависит от прав | Mock: список (универсальный роут) |
 | POST | /api/v1/resources/{name} | зависит от прав | Mock: создать |
 | PATCH | /api/v1/resources/{name}/{id} | зависит от прав | Mock: обновить |
 | DELETE | /api/v1/resources/{name}/{id} | зависит от прав | Mock: удалить |
@@ -92,20 +103,49 @@ docker compose exec app alembic upgrade head
 docker compose exec app poetry run pytest tests/ -v
 ```
 
-## Примеры запросов
+## Проверка системы разграничения доступа
+
+В системе заранее созданы два тестовых пользователя с разными правами.
+Убедимся, что разграничение работает:
 
 ```bash
-# Регистрация
-curl -X POST http://localhost:8000/api/v1/auth/register \
+# ── Логин админа (есть доступ ко всему) ──
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"secret123","password_confirm":"secret123"}'
+  -d '{"email":"admin@example.com","password":"admin123"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-# Логин
-curl -X POST http://localhost:8000/api/v1/auth/login \
+# ── Логин просматривающего (только read) ──
+VTOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}'
+  -d '{"email":"viewer@example.com","password":"viewer123"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-# Доступ к ресурсу (с токеном)
-curl http://localhost:8000/api/v1/resources/orders \
-  -H "Authorization: Bearer <token>"
+# ── Админ может читать и создавать ──
+curl -s http://localhost:8000/api/v1/resources/orders \
+  -H "Authorization: Bearer $TOKEN"          # 200 OK
+
+curl -s -X POST http://localhost:8000/api/v1/resources/orders \
+  -H "Authorization: Bearer $TOKEN"          # 200 OK
+
+# ── Viewer может только читать ──
+curl -s http://localhost:8000/api/v1/resources/orders \
+  -H "Authorization: Bearer $VTOKEN"        # 200 OK
+
+curl -s -X POST http://localhost:8000/api/v1/resources/orders \
+  -H "Authorization: Bearer $VTOKEN"        # 403 Forbidden
+
+# ── Viewer не имеет доступа к users ──
+curl -s http://localhost:8000/api/v1/resources/users \
+  -H "Authorization: Bearer $VTOKEN"        # 403 Forbidden
+
+# ── Без токена — 401 ──
+curl -s http://localhost:8000/api/v1/resources/orders    # 401 Unauthorized
+
+# ── После logout токен перестаёт работать ──
+curl -s -X POST http://localhost:8000/api/v1/auth/logout \
+  -H "Authorization: Bearer $TOKEN"                     # 200 OK
+
+curl -s http://localhost:8000/api/v1/resources/orders \
+  -H "Authorization: Bearer $TOKEN"                     # 401 Session expired
 ```

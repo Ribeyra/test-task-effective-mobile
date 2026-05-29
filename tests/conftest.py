@@ -5,16 +5,20 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from passlib.context import CryptContext
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine
+)
 
 from app.api.deps import get_db
 from app.core.database import Base
 from app.main import app as _app
-from app.models.models import Permission, Resource, Role, User, UserRole
+from app.models.models import Resource, Role, User, UserRole
 
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/auth_system_test"
+TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/auth_system_test"  # noqa e501
 
 
 @pytest.fixture(scope="session")
@@ -46,14 +50,20 @@ async def session(engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture
 async def seed_data(session: AsyncSession):
-    admin_role = Role(id=uuid.uuid4(), name="admin", description="Admin", is_system=True)
-    viewer_role = Role(id=uuid.uuid4(), name="viewer", description="Viewer", is_system=False)
+    admin_role = Role(
+        id=uuid.uuid4(), name="admin", description="Admin", is_system=True
+    )
+    viewer_role = Role(
+        id=uuid.uuid4(), name="viewer", description="Viewer", is_system=False
+    )
     session.add(admin_role)
     session.add(viewer_role)
     await session.flush()
 
     orders = Resource(id=uuid.uuid4(), name="orders", description="Orders")
-    products = Resource(id=uuid.uuid4(), name="products", description="Products")
+    products = Resource(
+        id=uuid.uuid4(), name="products", description="Products"
+    )
     session.add(orders)
     session.add(products)
     await session.flush()

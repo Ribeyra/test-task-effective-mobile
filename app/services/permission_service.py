@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Permission, Resource, Role, User
 
 
-async def get_permissions_for_user(db: AsyncSession, user: User) -> list[Permission]:
+async def get_permissions_for_user(
+    db: AsyncSession, user: User
+) -> list[Permission]:
     if user.is_superuser:
         result = await db.execute(select(Permission))
         return list(result.scalars().all())
@@ -62,7 +64,9 @@ async def get_role_by_id(db: AsyncSession, role_id: uuid.UUID) -> Role | None:
     return result.scalar_one_or_none()
 
 
-async def create_role(db: AsyncSession, name: str, description: str | None = None) -> Role:
+async def create_role(
+    db: AsyncSession, name: str, description: str | None = None
+) -> Role:
     role = Role(name=name, description=description)
     db.add(role)
     await db.flush()
@@ -70,7 +74,12 @@ async def create_role(db: AsyncSession, name: str, description: str | None = Non
     return role
 
 
-async def update_role(db: AsyncSession, role: Role, name: str | None = None, description: str | None = None) -> Role:
+async def update_role(
+    db: AsyncSession,
+    role: Role,
+    name: str | None = None,
+    description: str | None = None
+) -> Role:
     if name is not None:
         role.name = name
     if description is not None:
@@ -90,8 +99,10 @@ async def get_all_resources(db: AsyncSession) -> list[Resource]:
     return list(result.scalars().all())
 
 
-async def get_resource_by_id(db: AsyncSession, resource_id: uuid.UUID) -> Resource | None:
-    result = await db.execute(select(Resource).where(Resource.id == resource_id))
+async def get_resource_by_id(
+    db: AsyncSession, resource_id: uuid.UUID
+) -> Resource | None:
+    result = await db.execute(select(Resource).where(Resource.id == resource_id))  # noqa e501
     return result.scalar_one_or_none()
 
 
@@ -102,8 +113,12 @@ async def get_all_permissions(db: AsyncSession) -> list[Permission]:
     return list(result.scalars().all())
 
 
-async def get_permission_by_id(db: AsyncSession, permission_id: uuid.UUID) -> Permission | None:
-    result = await db.execute(select(Permission).where(Permission.id == permission_id))
+async def get_permission_by_id(
+    db: AsyncSession, permission_id: uuid.UUID
+) -> Permission | None:
+    result = await db.execute(
+        select(Permission).where(Permission.id == permission_id)
+    )
     return result.scalar_one_or_none()
 
 

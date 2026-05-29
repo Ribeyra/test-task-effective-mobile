@@ -30,7 +30,9 @@ async def list_permissions(
     return await get_all_permissions(db)
 
 
-@router.post("", response_model=PermissionOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=PermissionOut, status_code=status.HTTP_201_CREATED
+)
 async def create_permission_endpoint(
     body: PermissionCreate,
     db: AsyncSession = Depends(get_db),
@@ -56,7 +58,10 @@ async def update_permission_endpoint(
 ):
     permission = await get_permission_by_id(db, permission_id)
     if not permission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Permission not found"
+        )
     return await update_permission(
         db,
         permission,
@@ -75,6 +80,9 @@ async def delete_permission_endpoint(
 ):
     permission = await get_permission_by_id(db, permission_id)
     if not permission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Permission not found"
+        )
     await delete_permission(db, permission)
     return MessageOut(detail="Permission deleted successfully")
